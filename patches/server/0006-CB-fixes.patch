@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 25 Feb 2022 07:14:48 -0800
+Subject: [PATCH] CB fixes
+
+* Missing Level -> LevelStem generic in StructureCheck
+  Need to use the right for injectDatafixingContext
+
+* Removed incorrect parent perm for `minecraft.debugstick.always`
+
+* Fixed method signature of Marker#addPassenger
+
+* Removed unneeded UOE in CustomWorldChunkManager (extends BiomeSource)
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a480e20ac456a3169c67d2d43c191b7807a8ef10..1427b76110a02cee15865173e06e7b7bb4231ae7 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -273,7 +273,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+         long l = minecraftserver.getWorldData().worldGenSettings().seed();
+ 
+-        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), resourcekey, chunkgenerator, this, chunkgenerator.getBiomeSource(), l, datafixer);
++        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), this.getTypeKey(), chunkgenerator, this, chunkgenerator.getBiomeSource(), l, datafixer); // Paper - Fix missing CB diff
+         this.structureFeatureManager = new StructureFeatureManager(this, this.serverLevelData.worldGenSettings(), this.structureCheck); // CraftBukkit
+         if (this.dimensionType().createDragonFight()) {
+             this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenSettings().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/entity/Marker.java b/src/main/java/net/minecraft/world/entity/Marker.java
+index aef33a96cf8df9400cc60285ef1f7c5ded03b495..059c4c3b59f66ea2b2b23fe1eb106bf9447b607c 100644
+--- a/src/main/java/net/minecraft/world/entity/Marker.java
++++ b/src/main/java/net/minecraft/world/entity/Marker.java
+@@ -38,8 +38,9 @@ public class Marker extends Entity {
+     }
+ 
+     @Override
+-    protected void addPassenger(Entity passenger) {
++    protected boolean addPassenger(Entity passenger) { // Paper - fix upstream
+         passenger.stopRiding();
++        return false; // Paper - fix upstream
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+index ac1373b8c4411298f881f9d569bf984704eeadc4..469d3d7fb69829595abd221c700fcf79d2c42fd0 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -45,7 +45,7 @@ public class StructureCheck {
+     private final Registry<Biome> biomes;
+     private final Registry<ConfiguredStructureFeature<?, ?>> structureConfigs;
+     private final StructureManager structureManager;
+-    private final ResourceKey<Level> dimension;
++    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
+     private final ChunkGenerator chunkGenerator;
+     private final LevelHeightAccessor heightAccessor;
+     private final BiomeSource biomeSource;
+@@ -54,7 +54,7 @@ public class StructureCheck {
+     private final Long2ObjectMap<Object2IntMap<ConfiguredStructureFeature<?, ?>>> loadedChunks = new Long2ObjectOpenHashMap<>();
+     private final Map<ConfiguredStructureFeature<?, ?>, Long2BooleanMap> featureChecks = new HashMap<>();
+ 
+-    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<Level> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) {
++    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
+         this.storageAccess = chunkIoWorker;
+         this.registryAccess = registryManager;
+         this.structureManager = structureManager;
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
+index 6f1855d1fed73b694b0eaf581231359a66ae48e2..0238db9d5ffebe597534ec283f173ee2da19946d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
+@@ -45,8 +45,7 @@ public class CustomWorldChunkManager extends BiomeSource {
+ 
+     @Override
+     public BiomeSource withSeed(long seed) {
+-        // TODO check method further
+-        throw new UnsupportedOperationException("Cannot copy CustomWorldChunkManager");
++        return this; // Paper - Since this doesn't take a seed, no need to throw UOE
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java b/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java
+index c93eec7a81ed83dc9190417dd51acb2780d3b60d..70d3949616c63038ad3e9bd1069db5ea2fb3f3b8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java
+@@ -15,7 +15,7 @@ public final class CraftDefaultPermissions {
+         DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".nbt.place", "Gives the user the ability to place restricted blocks with NBT in creative", org.bukkit.permissions.PermissionDefault.OP, parent);
+         DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".nbt.copy", "Gives the user the ability to copy NBT in creative", org.bukkit.permissions.PermissionDefault.TRUE, parent);
+         DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".debugstick", "Gives the user the ability to use the debug stick in creative", org.bukkit.permissions.PermissionDefault.OP, parent);
+-        DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".debugstick.always", "Gives the user the ability to use the debug stick in all game modes", org.bukkit.permissions.PermissionDefault.FALSE, parent);
++        DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".debugstick.always", "Gives the user the ability to use the debug stick in all game modes", org.bukkit.permissions.PermissionDefault.FALSE/* , parent */); // Paper - should not have this parent, as it's not a "vanilla" utility
+         // Spigot end
+         parent.recalculatePermissibles();
+     }
