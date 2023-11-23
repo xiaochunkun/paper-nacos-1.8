@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 5 Jul 2023 23:11:53 +0100
+Subject: [PATCH] Reset mainSupportingBlockPos on some teleport calls
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b777547cb9f8edf4e7b3c2cfb894f8cd1b1a35a5..5330840a44e1a4eb39554ac7d59f355d74476562 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1739,11 +1739,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         }
+ 
+         this.internalTeleport(d0, d1, d2, f, f1, set);
++        this.player.mainSupportingBlockPos = Optional.empty();
+         return event.isCancelled(); // CraftBukkit - Return event status
+     }
+ 
+     public void teleport(Location dest) {
+         this.internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch(), Collections.emptySet());
++        this.player.mainSupportingBlockPos = Optional.empty();
+     }
+ 
+     public void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) { // Paper
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 3ffb92a82e17af467afb18c81accc482a93d6a6f..305b43071aa1cf8feee75fae757bb7734ae33771 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1369,7 +1369,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     protected BlockPos getOnPos(float offset) {
+-        if (this.mainSupportingBlockPos.isPresent()) {
++        if (this.mainSupportingBlockPos.isPresent() && this.level().getChunkIfLoadedImmediately(this.mainSupportingBlockPos.get()) != null) { // Paper - ensure no loads
+             BlockPos blockposition = (BlockPos) this.mainSupportingBlockPos.get();
+ 
+             if (offset <= 1.0E-5F) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 5b201d2c21f04e0223970035e0631f8f92ea0d3a..318a57f34d304fe00670eb207968138c1fe9d1fb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1381,6 +1381,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Check if the fromWorld and toWorld are the same.
+         if (fromWorld == toWorld) {
+             entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), relativeArguments); // Paper - Teleport API
++            entity.mainSupportingBlockPos = Optional.empty(); // Paper
+         } else {
+             // The respawn reason should never be used if the passed location is non null.
+             server.getHandle().respawn(entity, toWorld, true, to, !toWorld.paperConfig().environment.disableTeleportationSuffocationCheck, null); // Paper
