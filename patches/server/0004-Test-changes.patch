@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 13 Feb 2023 14:14:56 -0800
+Subject: [PATCH] Test changes
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index ff4d0f970990187e9b46324b5cf051fcc546119f..844eff88c9ad95871900c2d8aa3136b3f2928bf9 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -58,6 +58,12 @@ tasks.compileJava {
+     options.setIncremental(false)
+ }
+ 
++// Paper start - compile tests with -parameters for better junit parameterized test names
++tasks.compileTestJava {
++    options.compilerArgs.add("-parameters")
++}
++// Paper end
++
+ publishing {
+     publications.create<MavenPublication>("maven") {
+         artifact(tasks.shadowJar)
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index d96efc9aa90debcca5f237c949ba11b10070223a..efa4452cd20231051cdac1b497d7bfafb72bed78 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -38,6 +38,14 @@ public final class DummyServer {
+ 
+             when(instance.getRegistry(any())).then(mock -> CraftRegistry.createRegistry(mock.getArgument(0), AbstractTestingBase.REGISTRY_CUSTOM));
+ 
++            // Paper start - testing additions
++            final Thread currentThread = Thread.currentThread();
++            when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
++
++            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
++            when(instance.getPluginManager()).thenReturn(pluginManager);
++            // paper end - testing additions
++
+             Bukkit.setServer(instance);
+         } catch (Throwable t) {
+             throw new Error(t);
