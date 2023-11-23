@@ -1,0 +1,83 @@
+From bd8f9fe1de9b9e80ac852d851b6f7d58aecfec55 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 19:36:20 -0400
+Subject: [PATCH] MC Dev fixes
+
+
+diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+index f02fc60..d60e755 100644
+--- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+@@ -89,7 +89,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+         return Objects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
+     }
+ 
+-    public int compareTo(Object object) {
++    public int compareTo(BaseBlockPosition object) { // Paper - decompile fix
+         return this.l((BaseBlockPosition) object);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
+index 059c96f..ab04f9c 100644
+--- a/src/main/java/net/minecraft/server/BiomeBase.java
++++ b/src/main/java/net/minecraft/server/BiomeBase.java
+@@ -49,7 +49,7 @@ public abstract class BiomeBase {
+     protected List<BiomeBase.BiomeMeta> x;
+ 
+     public static int a(BiomeBase biomebase) {
+-        return BiomeBase.REGISTRY_ID.a((Object) biomebase);
++        return BiomeBase.REGISTRY_ID.a(biomebase); // Paper - decompile fix
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
+index 71524f2..288c52c 100644
+--- a/src/main/java/net/minecraft/server/BlockStateEnum.java
++++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
+@@ -29,7 +29,7 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+                 throw new IllegalArgumentException("Multiple values have the same name \'" + s1 + "\'");
+             }
+ 
+-            this.b.put(s1, oenum);
++            this.b.put(s1, (T) oenum);
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/CommandAbstract.java b/src/main/java/net/minecraft/server/CommandAbstract.java
+index 7876457..20572d4 100644
+--- a/src/main/java/net/minecraft/server/CommandAbstract.java
++++ b/src/main/java/net/minecraft/server/CommandAbstract.java
+@@ -212,7 +212,7 @@ public abstract class CommandAbstract implements ICommand {
+         }
+ 
+         if (object != null && oclass.isAssignableFrom(object.getClass())) {
+-            return (Entity) object;
++            return (T) object; // Paper - fix decompile error
+         } else {
+             throw new ExceptionEntityNotFound();
+         }
+@@ -554,7 +554,7 @@ public abstract class CommandAbstract implements ICommand {
+         return this.getCommand().compareTo(icommand.getCommand());
+     }
+ 
+-    public int compareTo(Object object) {
++    public int compareTo(ICommand object) { // Paper - fix decompile error
+         return this.a((ICommand) object);
+     }
+ 
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
+index f5bcbdb..3190cad 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemFactoryTest.java
+@@ -20,7 +20,7 @@ public class ItemFactoryTest extends AbstractTestingBase {
+ 
+     @Test
+     public void testKnownAttributes() throws Throwable {
+-        final ZipInputStream nmsZipStream = new ZipInputStream(CommandAbstract.class/* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().openStream());
++        final ZipInputStream nmsZipStream = new ZipInputStream(net.minecraft.server.HttpUtilities.class/* Magic class that isn't imported! */.getProtectionDomain().getCodeSource().getLocation().openStream()); // Paper
+         final Collection<String> names = new HashSet<String>();
+         for (ZipEntry clazzEntry; (clazzEntry = nmsZipStream.getNextEntry()) != null; ) {
+             final String entryName = clazzEntry.getName();
+-- 
+2.7.4 (Apple Git-66)
+

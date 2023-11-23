@@ -1,0 +1,46 @@
+From 89bf27993307d5c147a030e8736f656aa6c42a83 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 29 Feb 2016 17:24:57 -0600
+Subject: [PATCH] Add getTPS method
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 85fd9a83..8d602a3e 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1139,6 +1139,14 @@ public final class Bukkit {
+         return server.createBossBar(title, color, style, flags);
+     }
+ 
++    /**
++     * Gets the current server TPS
++     * @return current server TPS (1m, 5m, 15m in Paper-Server)
++     */
++    public static double[] getTPS() {
++        return server.getTPS();
++    }
++
+     /**
+      * @see UnsafeValues
+      * @return the unsafe values instance
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index f82cbaf5..6e23b0ce 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -933,6 +933,13 @@ public interface Server extends PluginMessageRecipient {
+      */
+     BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag ...flags);
+ 
++    /**
++     * Gets the current server TPS
++     *
++     * @return current server TPS (1m, 5m, 15m in Paper-Server)
++     */
++    public double[] getTPS();
++
+     /**
+      * @see UnsafeValues
+      * @return the unsafe values instance
+-- 
+2.34.0
+
