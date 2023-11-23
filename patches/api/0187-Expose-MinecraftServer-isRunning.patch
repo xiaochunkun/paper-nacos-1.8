@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Fri, 10 Apr 2020 21:24:35 -0400
+Subject: [PATCH] Expose MinecraftServer#isRunning
+
+This allows for plugins to detect if the server is actually turning off in onDisable rather than just plugins reloading.
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index ad3de5789b2490f5f2c42cc173caa1ef18a95e53..32847b69be4c73529b54d3f717d9cf15a16e9669 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2363,6 +2363,15 @@ public final class Bukkit {
+     public static int getCurrentTick() {
+         return server.getCurrentTick();
+     }
++
++    /**
++     * Checks if the server is in the process of being shutdown.
++     *
++     * @return true if server is in the process of being shutdown
++     */
++    public static boolean isStopping() {
++        return server.isStopping();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 73fc1082b3c867ec73aff12378bf0cabef97054c..e4370e5c0e529c221e0e0a7b0b0c89f8528dae0f 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2059,5 +2059,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @return Current tick
+      */
+     int getCurrentTick();
++
++    /**
++     * Checks if the server is in the process of being shutdown.
++     *
++     * @return true if server is in the process of being shutdown
++     */
++    boolean isStopping();
+     // Paper end
+ }

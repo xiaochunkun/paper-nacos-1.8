@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Madeline Miller <mnmiller1@me.com>
+Date: Mon, 4 Jan 2021 16:40:55 +1000
+Subject: [PATCH] Add API to get exact interaction point in PlayerInteractEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java b/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
+index f5bb9eb36d810d2ad988b71951b4029c70704287..16a0d738706b7aac1490a875a7052ce5490c6655 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.event.player;
+ 
++import org.bukkit.Location;
+ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.entity.Player;
+@@ -34,22 +35,30 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
+     private Result useClickedBlock;
+     private Result useItemInHand;
+     private EquipmentSlot hand;
++    private Location interactionPoint; // Paper
+ 
+     public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace) {
+         this(who, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
+     }
+ 
+     public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand) {
++        // Paper start - Add interactionPoint
++        this(who, action, item, clickedBlock, clickedFace, hand, null);
++    }
++
++    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand, @Nullable final Location interactionPoint) {
+         super(who);
+         this.action = action;
+         this.item = item;
+         this.blockClicked = clickedBlock;
+         this.blockFace = clickedFace;
+         this.hand = hand;
++        this.interactionPoint = interactionPoint;
+ 
+         useItemInHand = Result.DEFAULT;
+         useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
+     }
++    // Paper end
+ 
+     /**
+      * Returns the action type
+@@ -221,6 +230,18 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
+         return hand;
+     }
+ 
++    // Paper start
++    /**
++     * The exact point at which the interaction occurred. May be null.
++     *
++     * @return the exact interaction point. May be null.
++     */
++    @Nullable
++    public Location getInteractionPoint() {
++        return interactionPoint;
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {

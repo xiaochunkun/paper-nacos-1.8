@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 28 Jan 2014 19:13:57 -0500
+Subject: [PATCH] Add ItemStack Recipe API helper methods
+
+Allows using ExactChoice Recipes with easier methods
+
+Redirects some of upstream's APIs to these new methods to avoid
+usage of magic values and the deprecated RecipeChoice#getItemStack
+
+diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+index 22dd838deda4761e24af017f6e9a417ef60094e8..37648928292be6a75a14ef3a0d3af2cd41e61c6c 100644
+--- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
++++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+@@ -146,8 +146,6 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+     /**
+      * Represents a choice that will be valid only one of the stacks is exactly
+      * matched (aside from stack size).
+-     * <br>
+-     * <b>Only valid for shaped recipes</b>
+      */
+     public static class ExactChoice implements RecipeChoice {
+ 
+diff --git a/src/main/java/org/bukkit/inventory/ShapedRecipe.java b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+index 06b7f273ae66b2c936523c95fd4f802bd39ae324..4869adf9b89f1458af5517ae5813d44630846de8 100644
+--- a/src/main/java/org/bukkit/inventory/ShapedRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+@@ -155,6 +155,13 @@ public class ShapedRecipe implements Recipe, Keyed {
+         return this;
+     }
+ 
++    // Paper start
++    @NotNull
++    public ShapedRecipe setIngredient(char key, @NotNull ItemStack item) {
++        return this.setIngredient(key, new RecipeChoice.ExactChoice(item));
++    }
++    // Paper end
++
+     /**
+      * Get a copy of the ingredients map.
+      *
+diff --git a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+index ebc2c713d8a4ceec86b7dd270c5ca18c78103bcc..1ff7f7327c3462f54b8b2d1100c608f30ecabe31 100644
+--- a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+@@ -106,6 +106,40 @@ public class ShapelessRecipe implements Recipe, Keyed {
+         return this;
+     }
+ 
++    // Paper start
++    @NotNull
++    public ShapelessRecipe addIngredient(@NotNull ItemStack item) {
++        return this.addIngredient(item.getAmount(), item);
++    }
++
++    @NotNull
++    public ShapelessRecipe addIngredient(int count, @NotNull ItemStack item) {
++        Preconditions.checkArgument(this.ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
++        while (count-- > 0) {
++            this.ingredients.add(new RecipeChoice.ExactChoice(item));
++        }
++        return this;
++    }
++
++    @NotNull
++    public ShapelessRecipe removeIngredient(@NotNull ItemStack item) {
++        return this.removeIngredient(1, item);
++    }
++
++    @NotNull
++    public ShapelessRecipe removeIngredient(int count, @NotNull ItemStack item) {
++        Iterator<RecipeChoice> iterator = this.ingredients.iterator();
++        while (count > 0 && iterator.hasNext()) {
++            RecipeChoice choice = iterator.next();
++            if (choice.test(item)) {
++                iterator.remove();
++                count--;
++            }
++        }
++        return this;
++    }
++    // Paper end
++
+     /**
+      * Removes an ingredient from the list.
+      *

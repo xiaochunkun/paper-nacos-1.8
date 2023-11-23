@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 13 Feb 2023 14:14:56 -0800
+Subject: [PATCH] Test changes
+
+
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index a9535199b39d03652f1235d4a920b795306f4ec9..5f0918e2d24a423f00b6cbd94a938bf4f1c0aae1 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -117,6 +117,12 @@ public final class DummyServer {
+ 
+                 return null;
+             });
++            // Paper start - test changes
++            final Thread currentThread = Thread.currentThread();
++            Mockito.when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
++            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
++            Mockito.when(instance.getPluginManager()).thenReturn(pluginManager);
++            // Paper end
+ 
+             Bukkit.setServer(instance);
+         } catch (Throwable t) {

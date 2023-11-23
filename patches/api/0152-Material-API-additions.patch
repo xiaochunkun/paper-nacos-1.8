@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 6 Oct 2018 21:14:29 -0400
+Subject: [PATCH] Material API additions
+
+
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 9941023b98f3822c7b12697ae7326708abf19ead..09669d5757f4fa58835e339deb8d38afa5662997 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -4439,6 +4439,23 @@ public enum Material implements Keyed, Translatable {
+         }
+     }
+ 
++    // Paper start
++    /**
++     * @return If the type is either AIR, CAVE_AIR or VOID_AIR
++     * @deprecated Check if the {@link ItemType} is {@link ItemType#AIR} or {@link BlockType#isAir()}
++     */
++    @Deprecated
++    public boolean isEmpty() {
++        switch (this) {
++            case AIR:
++            case CAVE_AIR:
++            case VOID_AIR:
++                return true;
++        }
++        return false;
++    }
++    // Paper end
++
+     /**
+      * Do not use for any reason.
+      *

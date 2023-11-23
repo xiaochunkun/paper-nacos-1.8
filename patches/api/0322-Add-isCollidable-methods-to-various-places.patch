@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 4 Nov 2021 11:50:35 -0700
+Subject: [PATCH] Add isCollidable methods to various places
+
+
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 8c900d455d37713ec6395caafa752bf8e2e89c58..1d92759a7284a4b2d9b5af08470e57f2fa70d82f 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -4493,6 +4493,17 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+     public Multimap<Attribute, AttributeModifier> getItemAttributes(@NotNull EquipmentSlot equipmentSlot) {
+         return this.getDefaultAttributeModifiers(equipmentSlot);
+     }
++
++    /**
++     * Checks if this material is collidable.
++     *
++     * @return true if collidable
++     * @throws IllegalArgumentException if {@link #isBlock()} is false
++     */
++    public boolean isCollidable() {
++        Preconditions.checkArgument(this.isBlock(), this + " isn't a block");
++        return this.asBlockType().isCollidable();
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
+index 6f6d7816f4e928e849e6e4f7265c977437ccf1bf..31dcec117ef278f8060e0a5a4e706239329f9915 100644
+--- a/src/main/java/org/bukkit/block/Block.java
++++ b/src/main/java/org/bukkit/block/Block.java
+@@ -481,6 +481,13 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
+      * @return true if block is solid
+      */
+     boolean isSolid();
++
++    /**
++     * Checks if this block is collidable.
++     *
++     * @return true if collidable
++     */
++    boolean isCollidable();
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/block/BlockState.java b/src/main/java/org/bukkit/block/BlockState.java
+index 635a97fb50c485f7ef2e3bdcbb6f185a4ad551bc..ef861fcd5caa39ca4c4eeec4a63f3eb28a033a31 100644
+--- a/src/main/java/org/bukkit/block/BlockState.java
++++ b/src/main/java/org/bukkit/block/BlockState.java
+@@ -224,4 +224,13 @@ public interface BlockState extends Metadatable {
+      *         or 'virtual' (e.g. on an itemstack)
+      */
+     boolean isPlaced();
++
++    // Paper start
++    /**
++     * Checks if this block state is collidable.
++     *
++     * @return true if collidable
++     */
++    boolean isCollidable();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/block/BlockType.java b/src/main/java/org/bukkit/block/BlockType.java
+index 9f77976b2f33ba2d5af89ea143a39a0f417a4429..fca5ce5f41861a82a54f5291e25c89b82103ae31 100644
+--- a/src/main/java/org/bukkit/block/BlockType.java
++++ b/src/main/java/org/bukkit/block/BlockType.java
+@@ -3210,4 +3210,13 @@ public interface BlockType<B extends BlockData> extends Keyed, Translatable, net
+      * @return True if this block type is an air block.
+      */
+     boolean isAir();
++
++    // Paper start - isCollidable API
++    /**
++     * Checks if this block type is collidable.
++     *
++     * @return true if collidable
++     */
++    boolean isCollidable();
++    // Paper end
+ }

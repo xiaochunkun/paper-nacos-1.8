@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 12 Mar 2021 17:09:42 -0800
+Subject: [PATCH] Item Rarity API
+
+== AT ==
+public net.minecraft.world.item.Item rarity
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+index 49be8074280d9840bb3d8e6880b4e0a8aa4ef0cb..589e8816a49f7d5cb6c4231e5851319647e71d3e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+@@ -142,4 +142,11 @@ public class CraftItemType implements ItemType {
+         return this.item.getDescriptionId();
+     }
+     // Paper end
++
++    // Paper start - Item Rarity API
++    @Override
++    public io.papermc.paper.inventory.ItemRarity getItemRarity() {
++        return io.papermc.paper.inventory.ItemRarity.values()[this.item.rarity.ordinal()];
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 4d776afaf8dce0e9dcd4b3992373680d86cc67f5..7807d0bf54cf55703a96ff5d55f335ff786048b7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -570,6 +570,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     public String getMainLevelName() {
+         return ((net.minecraft.server.dedicated.DedicatedServer) net.minecraft.server.MinecraftServer.getServer()).getProperties().levelName;
+     }
++
++    @Override
++    public io.papermc.paper.inventory.ItemRarity getItemStackRarity(org.bukkit.inventory.ItemStack itemStack) {
++        return io.papermc.paper.inventory.ItemRarity.values()[((org.bukkit.craftbukkit.inventory.CraftItemType)itemStack.getType()).getHandle().getRarity(CraftItemStack.asNMSCopy(itemStack)).ordinal()];
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/test/java/io/papermc/paper/inventory/ItemRarityTest.java b/src/test/java/io/papermc/paper/inventory/ItemRarityTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..38e6d42098f216b1d24f50386e7be98181122d8d
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/inventory/ItemRarityTest.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.inventory;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import net.minecraft.world.item.Rarity;
++import org.junit.Test;
++
++import static org.junit.Assert.assertEquals;
++
++public class ItemRarityTest {
++
++    @Test
++    public void testConvertFromNmsToBukkit() {
++        for (Rarity nmsRarity : Rarity.values()) {
++            assertEquals("rarity names are mis-matched", ItemRarity.values()[nmsRarity.ordinal()].name(), nmsRarity.name());
++        }
++    }
++
++    @Test
++    public void testRarityFormatting() {
++        for (Rarity nmsRarity : Rarity.values()) {
++            assertEquals("rarity formatting is mis-matched", nmsRarity.color, PaperAdventure.asVanilla(ItemRarity.values()[nmsRarity.ordinal()].color));
++        }
++    }
++}

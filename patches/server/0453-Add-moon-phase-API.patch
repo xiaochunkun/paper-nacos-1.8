@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 23 Aug 2020 16:32:11 +0200
+Subject: [PATCH] Add moon phase API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index 177d58dca134ee590af9cfd1fb427aa7eed7d4b3..f302d936057a56629c4b9edaaffb996191b102c9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -982,4 +982,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+ 
+         throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+     }
++
++    // Paper start
++    @Override
++    public io.papermc.paper.world.MoonPhase getMoonPhase() {
++        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / 24000L);
++    }
++    // Paper end
+ }

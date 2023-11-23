@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Sat, 24 Oct 2020 16:37:44 +0200
+Subject: [PATCH] living entity allow attribute registration
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+index 03561cb69c58e4ed8115a9e67df28d5df1f79bc4..dd1102d5291ef6f18e82400a6d8a0a376cc071e9 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
++++ b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+@@ -150,4 +150,12 @@ public class AttributeMap {
+         }
+ 
+     }
++
++    // Paper - start
++    public void registerAttribute(Attribute attributeBase) {
++        AttributeInstance attributeModifiable = new AttributeInstance(attributeBase, AttributeInstance::getAttribute);
++        attributes.put(attributeBase, attributeModifiable);
++    }
++    // Paper - end
++
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+index a5452d7ef38a4045995289a592ff8e467a1e9832..341cc78f44fa7ce4e790fa75cb2e5d3ed31a82f4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+@@ -38,6 +38,14 @@ public class CraftAttributeMap implements Attributable {
+         return (nms == null) ? null : new CraftAttributeInstance(nms, attribute);
+     }
+ 
++    // Paper start
++    @Override
++    public void registerAttribute(final Attribute attribute) {
++        Preconditions.checkArgument(attribute != null, "attribute");
++        this.handle.registerAttribute(CraftAttribute.bukkitToMinecraft(attribute));
++    }
++    // Paper end
++
+     public static Attribute fromMinecraft(String nms) {
+         return Registry.ATTRIBUTE.get(CraftNamespacedKey.fromString(nms));
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index c75d6d09d731ec41fe8b518bb1c866d3f0c63ff1..a5715406f99c97c5b785d8a1e0afdafc38ca06f2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -700,6 +700,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return this.getHandle().craftAttributes.getAttribute(attribute);
+     }
+ 
++    // Paper start
++    @Override
++    public void registerAttribute(Attribute attribute) {
++        getHandle().craftAttributes.registerAttribute(attribute);
++    }
++    // Paper end
++
+     @Override
+     public void setAI(boolean ai) {
+         if (this.getHandle() instanceof Mob) {

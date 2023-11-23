@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: zbk <zbk@projectsolaris.net>
+Date: Sun, 26 Apr 2020 23:49:03 -0400
+Subject: [PATCH] Villager Restocks API
+
+
+diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
+index a6e57f8ad3f09d05ca61c824d128221528f7a96d..5ba0ac5f8675c8db1955318355d5a16f23f55e3f 100644
+--- a/src/main/java/org/bukkit/entity/Villager.java
++++ b/src/main/java/org/bukkit/entity/Villager.java
+@@ -81,6 +81,20 @@ public interface Villager extends AbstractVillager {
+      */
+     public void setVillagerExperience(int experience);
+ 
++    // Paper start
++    /**
++     * Gets the amount of times a villager has restocked their trades today
++     * @return The amount of trade restocks.
++     */
++    public int getRestocksToday();
++
++    /**
++     * Sets the amount of times a villager has restocked their trades today
++     * @param restocksToday new restock count
++     */
++    public void setRestocksToday(int restocksToday);
++    // Paper end
++
+     /**
+      * Attempts to make this villager sleep at the given location.
+      * <br>

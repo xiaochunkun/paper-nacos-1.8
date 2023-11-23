@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Madeline Miller <mnmiller1@me.com>
+Date: Thu, 31 Dec 2020 12:48:38 +1000
+Subject: [PATCH] Add API to get Material from Boats and Minecarts
+
+
+diff --git a/src/main/java/org/bukkit/entity/Boat.java b/src/main/java/org/bukkit/entity/Boat.java
+index d6e114107c3990d91b179cd2cc3a8c04d4df0a2a..7410d0ec4f00ae275544ea67a0908df0e9a36ceb 100644
+--- a/src/main/java/org/bukkit/entity/Boat.java
++++ b/src/main/java/org/bukkit/entity/Boat.java
+@@ -175,4 +175,23 @@ public interface Boat extends Vehicle {
+         ON_LAND,
+         IN_AIR;
+     }
++
++    // Paper start
++    /**
++     * Gets the {@link org.bukkit.Material} that represents this Boat type.
++     *
++     * @return the boat material.
++     * @deprecated use {@link #getBoatItem()}
++     */
++    @NotNull
++    @Deprecated
++    public org.bukkit.Material getBoatMaterial();
++
++    /**
++     * Gets the {@link ItemType} that represents this Boat type.
++     *
++     * @return the boat item type
++     */
++    @NotNull ItemType getBoatItem();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Minecart.java b/src/main/java/org/bukkit/entity/Minecart.java
+index 177e12108f6108e4858910cef95f72110762b041..320058c7fc7b965ccf134b0686bfaacf8ed8111d 100644
+--- a/src/main/java/org/bukkit/entity/Minecart.java
++++ b/src/main/java/org/bukkit/entity/Minecart.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.entity;
+ 
++import org.bukkit.Material;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.material.MaterialData;
+ import org.bukkit.util.Vector;
+@@ -147,4 +148,14 @@ public interface Minecart extends Vehicle {
+      * @return the current block offset for this minecart.
+      */
+     public int getDisplayBlockOffset();
++
++    // Paper start
++    /**
++     * Gets the {@link Material} that represents this Minecart type.
++     *
++     * @return the minecart material.
++     */
++    @NotNull
++    public Material getMinecartMaterial();
++    // Paper end
+ }

@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 20:03:40 -0800
+Subject: [PATCH] Added missing vanilla tags
+
+
+diff --git a/src/main/java/org/bukkit/Tag.java b/src/main/java/org/bukkit/Tag.java
+index bbf7dd8ca90ba1c3626e87ca221201568163101f..974dcacb09ec05c98a4a6af28f86694b97b9c925 100644
+--- a/src/main/java/org/bukkit/Tag.java
++++ b/src/main/java/org/bukkit/Tag.java
+@@ -761,6 +761,12 @@ public interface Tag<T extends Keyed> extends Keyed {
+      * Vanilla item tag representing all chest boat items.
+      */
+     Tag<ItemType> ITEMS_CHEST_BOATS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("chest_boats"), ItemType.class);
++    // Paper start
++    /**
++     * Vanilla item tag representing all non-flammable wood items.
++     */
++    Tag<ItemType> ITEMS_NON_FLAMMABLE_WOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("non_flammable_wood"), ItemType.class);
++    // Paper end
+     /**
+      * Vanilla item tag representing all fish items.
+      */

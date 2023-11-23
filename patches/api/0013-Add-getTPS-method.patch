@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 29 Feb 2016 17:24:57 -0600
+Subject: [PATCH] Add getTPS method
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 6cae51327c3acf6aa0284be3c94d7fdf3cab3486..3ea91c82670ae329a11b3d035378be047d91e3e8 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1941,6 +1941,17 @@ public final class Bukkit {
+         return server.getEntity(uuid);
+     }
+ 
++    // Paper start
++    /**
++     * Gets the current server TPS
++     * @return current server TPS (1m, 5m, 15m in Paper-Server)
++     */
++    @NotNull
++    public static double[] getTPS() {
++        return server.getTPS();
++    }
++    // Paper end
++
+     /**
+      * Get the advancement specified by this key.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 3d54c3c09203558e2c5348a9100af6809651f3e8..0eeefd5eb693af9e16182d6e39e7b4a1d8568bfa 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1653,6 +1653,16 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     @Nullable
+     Entity getEntity(@NotNull UUID uuid);
+ 
++    // Paper start
++    /**
++     * Gets the current server TPS
++     *
++     * @return current server TPS (1m, 5m, 15m in Paper-Server)
++     */
++    @NotNull
++    public double[] getTPS();
++    // Paper end
++
+     /**
+      * Get the advancement specified by this key.
+      *

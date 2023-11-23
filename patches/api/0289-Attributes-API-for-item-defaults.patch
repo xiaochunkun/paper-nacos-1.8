@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 8 May 2021 15:02:00 -0700
+Subject: [PATCH] Attributes API for item defaults
+
+
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index d6c3c6b320e4996dfbc185d594d94efbedf453c9..8c900d455d37713ec6395caafa752bf8e2e89c58 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -4478,6 +4478,21 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+         Preconditions.checkArgument(this.isItem(), this + " must be an item");
+         return this.asItemType().getItemRarity();
+     }
++
++    /**
++     * Returns an immutable multimap of attributes for the slot.
++     * {@link #isItem()} must be true for this material.
++     *
++     * @param equipmentSlot the slot to get the attributes for
++     * @throws IllegalArgumentException if {@link #isItem()} is false
++     * @return an immutable multimap of attributes
++     * @deprecated use {@link #getDefaultAttributeModifiers(EquipmentSlot)}
++     */
++    @NotNull
++    @Deprecated
++    public Multimap<Attribute, AttributeModifier> getItemAttributes(@NotNull EquipmentSlot equipmentSlot) {
++        return this.getDefaultAttributeModifiers(equipmentSlot);
++    }
+     // Paper end
+ 
+     /**
