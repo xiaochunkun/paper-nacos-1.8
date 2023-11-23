@@ -1,0 +1,302 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SirYwell <hannesgreule@outlook.de>
+Date: Sat, 10 Jul 2021 11:12:30 +0200
+Subject: [PATCH] Rewrite LogEvents to contain the source jars in stack traces
+
+
+diff --git a/src/main/java/io/papermc/paper/logging/DelegateLogEvent.java b/src/main/java/io/papermc/paper/logging/DelegateLogEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ffd1befe64c6c3036c22e05ed1c44808d64bd28
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/logging/DelegateLogEvent.java
+@@ -0,0 +1,130 @@
++package io.papermc.paper.logging;
++
++import org.apache.logging.log4j.Level;
++import org.apache.logging.log4j.Marker;
++import org.apache.logging.log4j.ThreadContext;
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.impl.ThrowableProxy;
++import org.apache.logging.log4j.core.time.Instant;
++import org.apache.logging.log4j.message.Message;
++import org.apache.logging.log4j.util.ReadOnlyStringMap;
++
++import java.util.Map;
++
++public class DelegateLogEvent implements LogEvent {
++    private final LogEvent original;
++
++    protected DelegateLogEvent(LogEvent original) {
++        this.original = original;
++    }
++
++    @Override
++    public LogEvent toImmutable() {
++        return this.original.toImmutable();
++    }
++
++    @Override
++    public Map<String, String> getContextMap() {
++        return this.original.getContextMap();
++    }
++
++    @Override
++    public ReadOnlyStringMap getContextData() {
++        return this.original.getContextData();
++    }
++
++    @Override
++    public ThreadContext.ContextStack getContextStack() {
++        return this.original.getContextStack();
++    }
++
++    @Override
++    public String getLoggerFqcn() {
++        return this.original.getLoggerFqcn();
++    }
++
++    @Override
++    public Level getLevel() {
++        return this.original.getLevel();
++    }
++
++    @Override
++    public String getLoggerName() {
++        return this.original.getLoggerName();
++    }
++
++    @Override
++    public Marker getMarker() {
++        return this.original.getMarker();
++    }
++
++    @Override
++    public Message getMessage() {
++        return this.original.getMessage();
++    }
++
++    @Override
++    public long getTimeMillis() {
++        return this.original.getTimeMillis();
++    }
++
++    @Override
++    public Instant getInstant() {
++        return this.original.getInstant();
++    }
++
++    @Override
++    public StackTraceElement getSource() {
++        return this.original.getSource();
++    }
++
++    @Override
++    public String getThreadName() {
++        return this.original.getThreadName();
++    }
++
++    @Override
++    public long getThreadId() {
++        return this.original.getThreadId();
++    }
++
++    @Override
++    public int getThreadPriority() {
++        return this.original.getThreadPriority();
++    }
++
++    @Override
++    public Throwable getThrown() {
++        return this.original.getThrown();
++    }
++
++    @Override
++    public ThrowableProxy getThrownProxy() {
++        return this.original.getThrownProxy();
++    }
++
++    @Override
++    public boolean isEndOfBatch() {
++        return this.original.isEndOfBatch();
++    }
++
++    @Override
++    public boolean isIncludeLocation() {
++        return this.original.isIncludeLocation();
++    }
++
++    @Override
++    public void setEndOfBatch(boolean endOfBatch) {
++        this.original.setEndOfBatch(endOfBatch);
++    }
++
++    @Override
++    public void setIncludeLocation(boolean locationRequired) {
++        this.original.setIncludeLocation(locationRequired);
++    }
++
++    @Override
++    public long getNanoTime() {
++        return this.original.getNanoTime();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/logging/ExtraClassInfoLogEvent.java b/src/main/java/io/papermc/paper/logging/ExtraClassInfoLogEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e58dd3db1f97c049610d8f85a6f787f8d1011f73
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/logging/ExtraClassInfoLogEvent.java
+@@ -0,0 +1,104 @@
++package io.papermc.paper.logging;
++
++import io.papermc.paper.util.ObfHelper;
++import java.lang.reflect.Field;
++import java.lang.reflect.Method;
++import java.util.Collections;
++import java.util.LinkedHashMap;
++import java.util.Map;
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.impl.ExtendedClassInfo;
++import org.apache.logging.log4j.core.impl.ExtendedStackTraceElement;
++import org.apache.logging.log4j.core.impl.ThrowableProxy;
++
++public class ExtraClassInfoLogEvent extends DelegateLogEvent {
++    private static final Map<Class<?>, ExtendedClassInfo> EXTRA_INFO_CACHE = Collections.synchronizedMap(new LinkedHashMap<>(256, 0.75f, true) {
++        @Override
++        protected boolean removeEldestEntry(final Map.Entry<Class<?>, ExtendedClassInfo> eldest) {
++            return this.size() > 255;
++        }
++    });
++    private static final Method TO_CACHE_ENTRY;
++    private static final Field ELEMENT;
++
++    static {
++        try {
++            final Class<?> cls = Class.forName("org.apache.logging.log4j.core.impl.ThrowableProxyHelper");
++            TO_CACHE_ENTRY = cls.getDeclaredMethod("toCacheEntry", Class.class, boolean.class);
++            TO_CACHE_ENTRY.setAccessible(true);
++            ELEMENT = Class.forName("org.apache.logging.log4j.core.impl.ThrowableProxyHelper.CacheEntry")
++                .getDeclaredField("element");
++            ELEMENT.setAccessible(true);
++        } catch (final ReflectiveOperationException ex) {
++            throw new RuntimeException(ex);
++        }
++    }
++
++    private boolean fixed;
++
++    public ExtraClassInfoLogEvent(LogEvent original) {
++        super(original);
++    }
++
++    @Override
++    public ThrowableProxy getThrownProxy() {
++        if (fixed) {
++            return super.getThrownProxy();
++        }
++        rewriteStackTrace(super.getThrownProxy());
++        fixed = true;
++        return super.getThrownProxy();
++    }
++
++    private void rewriteStackTrace(ThrowableProxy throwable) {
++        ExtendedStackTraceElement[] stackTrace = throwable.getExtendedStackTrace();
++        for (int i = 0; i < stackTrace.length; i++) {
++            ExtendedClassInfo classInfo = stackTrace[i].getExtraClassInfo();
++            if (classInfo.getLocation().equals("?")) {
++                if (this.handleDeobfed(stackTrace, i)) {
++                    continue;
++                }
++
++                StackTraceElement element = stackTrace[i].getStackTraceElement();
++                String classLoaderName = element.getClassLoaderName();
++                if (classLoaderName != null) {
++                    stackTrace[i] = new ExtendedStackTraceElement(element,
++                        new ExtendedClassInfo(classInfo.getExact(), classLoaderName, "?"));
++                }
++            }
++        }
++        if (throwable.getCauseProxy() != null) {
++            rewriteStackTrace(throwable.getCauseProxy());
++        }
++        if (throwable.getSuppressedProxies() != null) {
++            for (ThrowableProxy proxy : throwable.getSuppressedProxies()) {
++                rewriteStackTrace(proxy);
++            }
++        }
++    }
++
++    private boolean handleDeobfed(
++        final ExtendedStackTraceElement[] stackTrace,
++        final int i
++    ) {
++        final String className = stackTrace[i].getClassName();
++        final String reobf = ObfHelper.INSTANCE.reobfClassName(className);
++        if (!reobf.equals(className)) {
++            try {
++                final ExtendedClassInfo extraInfo = EXTRA_INFO_CACHE.computeIfAbsent(Class.forName(reobf), k -> {
++                    try {
++                        final Object cacheEntry = TO_CACHE_ENTRY.invoke(null, k, true);
++                        return (ExtendedClassInfo) ELEMENT.get(cacheEntry);
++                    } catch (final ReflectiveOperationException e) {
++                        throw new RuntimeException(e);
++                    }
++                });
++                stackTrace[i] = new ExtendedStackTraceElement(stackTrace[i].getStackTraceElement(), extraInfo);
++                return true;
++            } catch (final ReflectiveOperationException e) {
++                throw new RuntimeException(e);
++            }
++        }
++        return false;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/logging/ExtraClassInfoRewritePolicy.java b/src/main/java/io/papermc/paper/logging/ExtraClassInfoRewritePolicy.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..34734bb969a1a74c7a4f9c17d40ebf007ad5d701
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/logging/ExtraClassInfoRewritePolicy.java
+@@ -0,0 +1,29 @@
++package io.papermc.paper.logging;
++
++import org.apache.logging.log4j.core.Core;
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.appender.rewrite.RewritePolicy;
++import org.apache.logging.log4j.core.config.plugins.Plugin;
++import org.apache.logging.log4j.core.config.plugins.PluginFactory;
++import org.jetbrains.annotations.NotNull;
++
++@Plugin(
++    name = "ExtraClassInfoRewritePolicy",
++    category = Core.CATEGORY_NAME,
++    elementType = "rewritePolicy",
++    printObject = true
++)
++public final class ExtraClassInfoRewritePolicy implements RewritePolicy {
++    @Override
++    public LogEvent rewrite(LogEvent source) {
++        if (source.getThrown() != null) {
++            return new ExtraClassInfoLogEvent(source);
++        }
++        return source;
++    }
++
++    @PluginFactory
++    public static @NotNull ExtraClassInfoRewritePolicy createPolicy() {
++        return new ExtraClassInfoRewritePolicy();
++    }
++}
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index 2e421eaac80cf251b32e0bb504dd54a73edf4986..74ccc67e3c12dc5182602fb691ef3ddeb5b53280 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -34,6 +34,10 @@
+         </Async>
+         <Rewrite name="rewrite">
+             <StacktraceDeobfuscatingRewritePolicy />
++            <AppenderRef ref="rewrite2"/>
++        </Rewrite>
++        <Rewrite name="rewrite2">
++            <ExtraClassInfoRewritePolicy />
+             <AppenderRef ref="File"/>
+             <AppenderRef ref="TerminalConsole" level="info"/>
+             <AppenderRef ref="ServerGuiConsole" level="info"/>
