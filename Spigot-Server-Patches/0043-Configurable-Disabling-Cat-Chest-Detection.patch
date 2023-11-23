@@ -1,0 +1,40 @@
+From d1f74537965b0b0d5e0ddd63e619874823c424ce Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 01:13:45 -0600
+Subject: [PATCH] Configurable Disabling Cat Chest Detection
+
+Offers a gameplay feature to stop cats from blocking chests
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4266a87fe..4641eaf2f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -184,4 +184,9 @@ public class PaperWorldConfig {
+     private void containerUpdateTickRate() {
+         containerUpdateTickRate = getInt("container-update-tick-rate", 1);
+     }
++
++    public boolean disableChestCatDetection;
++    private void disableChestCatDetection() {
++        disableChestCatDetection = getBoolean("game-mechanics.disable-chest-cat-detection", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
+index 5e1a3df2b..e94786138 100644
+--- a/src/main/java/net/minecraft/server/BlockChest.java
++++ b/src/main/java/net/minecraft/server/BlockChest.java
+@@ -232,6 +232,11 @@ public class BlockChest extends BlockTileEntity implements IFluidSource, IFluidC
+     }
+ 
+     private boolean b(World world, BlockPosition blockposition) {
++        // Paper start - Option to disable chest cat detection
++        if (world.paperConfig.disableChestCatDetection) {
++            return false;
++        }
++        // Paper end
+         List<EntityOcelot> list = world.a(EntityOcelot.class, new AxisAlignedBB((double) blockposition.getX(), (double) (blockposition.getY() + 1), (double) blockposition.getZ(), (double) (blockposition.getX() + 1), (double) (blockposition.getY() + 2), (double) (blockposition.getZ() + 1)));
+ 
+         if (!list.isEmpty()) {
+-- 
+2.21.0
+

@@ -1,0 +1,26 @@
+From 4188d3f20337cc303e6ea5245cf4cdbd7e5ffd3c Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sun, 2 Jun 2019 21:12:42 -0500
+Subject: [PATCH] MC-114618 - Fix EntityAreaEffectCloud from going negative
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityAreaEffectCloud.java b/src/main/java/net/minecraft/server/EntityAreaEffectCloud.java
+index b2814c0e..033182ae 100644
+--- a/src/main/java/net/minecraft/server/EntityAreaEffectCloud.java
++++ b/src/main/java/net/minecraft/server/EntityAreaEffectCloud.java
+@@ -158,6 +158,12 @@ public class EntityAreaEffectCloud extends Entity {
+         super.tick();
+         boolean flag = this.l();
+         float f = this.getRadius();
++        // Paper start - fix MC-114618
++        if (f < 0.0F) {
++            this.die();
++            return;
++        }
++        // Paper end
+ 
+         if (this.world.isClientSide) {
+             ParticleParam particleparam = this.getParticle();
+-- 
+2.22.0
+
