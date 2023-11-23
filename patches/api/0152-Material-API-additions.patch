@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 6 Oct 2018 21:14:29 -0400
+Subject: [PATCH] Material API additions
+
+
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 0b6c1065751b4315b30f9710a18bbcd5620ef97c..1e7b4cdad22f1679f1ea0f4bc9a90839c214331b 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -118,6 +118,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * An enum of all material IDs accepted by the official server and client
+  */
++@SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
+ public enum Material implements Keyed, Translatable {
+     //<editor-fold desc="Materials" defaultstate="collapsed">
+     AIR(9648, 0),
+@@ -4438,6 +4439,22 @@ public enum Material implements Keyed, Translatable {
+         }
+     }
+ 
++    // Paper start
++
++    /**
++     * @return If the type is either AIR, CAVE_AIR or VOID_AIR
++     */
++    public boolean isEmpty() {
++        switch (this) {
++            case AIR:
++            case CAVE_AIR:
++            case VOID_AIR:
++                return true;
++        }
++        return false;
++    }
++    // Paper end
++
+     /**
+      * Do not use for any reason.
+      *
