@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 13 Oct 2022 03:44:50 +0100
+Subject: [PATCH] Add max itemframe decoration limit
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index d2a77b4ca343d19e1c70afe3f3906a9bd53d0eec..12fbca641932458df554060165a26d8c0df3fd86 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -455,7 +455,7 @@ public class ItemFrame extends HangingEntity {
+                     if (itemstack.is(Items.FILLED_MAP)) {
+                         MapItemSavedData worldmap = MapItem.getSavedData(itemstack, this.level);
+ 
+-                        if (worldmap != null && worldmap.isTrackedCountOverLimit(256)) {
++                        if (worldmap != null && worldmap.isTrackedCountOverLimit(io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxMapDecorationLimit)) { // Paper
+                             return InteractionResult.FAIL;
+                         }
+                     }
+diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+index 67b88da702b780f79c0496cb17f1e6f1f8dd6c2b..62fffc32ccdfdbe86aa6b58ca40360dd901d4017 100644
+--- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
++++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -482,7 +482,7 @@ public class MapItemSavedData extends SavedData {
+                 return true;
+             }
+ 
+-            if (!this.isTrackedCountOverLimit(256)) {
++            if (!this.isTrackedCountOverLimit(io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxMapDecorationLimit)) { // Paper
+                 this.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
+                 this.addDecoration(mapiconbanner.getDecoration(), world, mapiconbanner.getId(), d0, d1, 180.0D, mapiconbanner.getName());
+                 return true;
