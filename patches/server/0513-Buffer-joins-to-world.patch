@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 19 Aug 2020 05:05:54 +0100
+Subject: [PATCH] Buffer joins to world
+
+This patch buffers the number of logins which will attempt to join
+the world per tick, this attempts to reduce the impact that join floods
+has on the server
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 8cc92129fd32aa94041cf99ec9a79231099047b8..53fc241e9aab9d73e8807de9acf31c1531d92fde 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -482,4 +482,9 @@ public class PaperConfig {
+             maxPlayerAutoSavePerTick = (playerAutoSaveRate == -1 || playerAutoSaveRate > 100) ? 10 : 20;
+         }
+     }
++
++    public static int maxJoinsPerTick;
++    private static void maxJoinsPerTick() {
++        maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index a3bfc12e34754dc5f8f53b968451a07f3a0ab496..aca6f642220de626983138270de67f161b1b1e76 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -37,6 +37,7 @@ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.network.protocol.PacketFlow;
+ import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
+ import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.RunningOnDifferentThreadException;
+ import net.minecraft.server.network.ServerGamePacketListenerImpl;
+ import net.minecraft.server.network.ServerLoginPacketListenerImpl;
+@@ -373,10 +374,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+     // Paper end
+ 
++    private static final int MAX_PER_TICK = com.destroystokyo.paper.PaperConfig.maxJoinsPerTick; // Paper
++    private static int joinAttemptsThisTick; // Paper
++    private static int currTick; // Paper
+     public void tick() {
+         this.flushQueue();
++        // Paper start
++        if (currTick != MinecraftServer.currentTick) {
++            currTick = MinecraftServer.currentTick;
++            joinAttemptsThisTick = 0;
++        }
++        // Paper end
+         if (this.packetListener instanceof ServerLoginPacketListenerImpl) {
++            if ( ((ServerLoginPacketListenerImpl) this.packetListener).state != ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT // Paper
++                     || (joinAttemptsThisTick++ < MAX_PER_TICK)) { // Paper - limit the number of joins which can be processed each tick
+             ((ServerLoginPacketListenerImpl) this.packetListener).tick();
++            } // Paper
+         }
+ 
+         if (this.packetListener instanceof ServerGamePacketListenerImpl) {
